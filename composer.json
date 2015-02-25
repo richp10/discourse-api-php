@@ -1,5 +1,5 @@
 {
-    "name": "richp10/bbb-api",
+    "name": "richp10/discourse-api-php",
     "description": "Packed version of the Discourse API PHP library from discoursehosting.",
     "license": "GPL2",
     "keywords": ["discourse"],
