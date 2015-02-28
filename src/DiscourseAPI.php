@@ -47,6 +47,7 @@ class DiscourseAPI
 
         curl_setopt($ch, CURLOPT_URL, $url);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+	curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
         $body = curl_exec($ch);
         $rc = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
@@ -94,42 +95,40 @@ class DiscourseAPI
         return $resObj;
     }
 
-    /**
+     /**
      * group
      *
-     * @param string $groupname         name of group
-     * @param string $usernames     users to add to group
+     * @param string $groupname     name of group to be created
+     * @param string $usernames     users in the group
      *
      * @return mixed HTTP return code and API return object
      */
-
     function group($groupname, $usernames = array())
     {
-        $obj = $this->_getRequest("/admin/groups.json");
-        if ($obj->http_code != 200) {
+	$groupId = $this->getGroupIdByGroupName($groupname);
+        if ($groupId) {
             return false;
         }
-
-        foreach($obj->apiresult as $group) {
-            if($group->name === $groupname) {
-                $groupId = $group->id;
-                break;
-            }
-            $groupId = false;
-        }
-
         $params = array(
             'group' => array(
                 'name' => $groupname,
-                'usernames' => implode(',', $usernames)
+                'usernames' => implode(',', $usernames),
+		'alias_level' => '0'
             )
         );
+        return $this->_postRequest('/admin/groups', $params);
+    }
 
-        if($groupId) {
-            return $this->_putRequest('/admin/groups/' . $groupId, $params);
-        } else {
-            return $this->_postRequest('/admin/groups', $params);
-        }
+
+     /**
+     * getCategories
+     *
+     * @return mixed HTTP return code and API return object
+     */
+    
+    function getCategories()
+    {
+        return $this->_getRequest("/categories.json");
     }
 
     /**
@@ -276,6 +275,20 @@ class DiscourseAPI
         return $this->_postRequest('/posts', $params, $userName);
     }
 
+
+     function getCategory($categoryName) {
+	return $this->_getRequest("/c/{$categoryName}.json");	
+     }
+
+    /**
+     * getTopic
+     *
+     */
+
+    function getTopic($topicId) {
+	return $this->_getRequest("/t/{$topicId}.json");
+    }
+
     /**
      * createPost
      *
@@ -307,5 +320,78 @@ class DiscourseAPI
         $params = array($siteSetting => $value);
         return $this->_putRequest('/admin/site_settings/' . $siteSetting, $params);
     }
+
+# these are mostly from timolaine
+
+     /**
+     * getUserByEmail
+     *
+     * @param string $email     email of user
+     *
+     * @return mixed user object
+     */
+
+    function getUserByEmail($email)
+    {
+        $users = $this->_getRequest("/admin/users/list/active.json");
+        foreach($users->apiresult as $user) {
+            if(strtolower($user->email) === strtolower($email)) {
+                return $user;
+            }
+        }
+	
+        return false;
+    }
+
+    /*
+    * getGroupIdByGroupName
+    *
+    * @param string $groupname    name of group
+    *
+    * @return mixed id of the group, or false if nonexistent
+    */
+
+    function getGroupIdByGroupName($groupname)
+    {
+        $obj = $this->getGroups();
+        if ($obj->http_code != 200) {
+            return false;
+        }
+
+        foreach($obj->apiresult as $group) {
+            if($group->name === $groupname) {
+                $groupId = intval($group->id);
+                break;
+            }
+            $groupId = false;
+        }
+
+	return $groupId;
+    }
+
+     /**
+     * addUserToGroup
+     *
+     * @param string $groupname    name of group
+     * @param string $username     user to add to the group
+     *
+     * @return mixed HTTP return code and API return object
+     */
+
+    function addUserToGroup($groupname, $username)
+    {
+	$groupId = $this->getGroupIdByGroupName($groupname);
+        if (!$groupId) {
+            $this->group($groupname, array($username));
+         } else {
+            $user = $this->getUserByUserName($username)->apiresult->user;
+            $params = array(
+                'group_id' => $groupId
+            );
+             return $this->_postRequest('/admin/users/' . $user->id . '/groups', $params);
+         }
+     }
+
+
 }
 
