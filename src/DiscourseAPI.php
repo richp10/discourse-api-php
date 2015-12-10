@@ -80,7 +80,14 @@ class DiscourseAPI
             $apiUser
         );
         curl_setopt($ch, CURLOPT_URL, $url);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($paramArray));
+
+	// http_build_query was causing a problem - this works
+	$query = '';
+        foreach ($paramArray['group'] as $param => $value) {
+           $query .= $param.'='.$value .'&';
+        }
+        $query = trim($query, '&');
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $query );
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
         if ($putMethod) {
             curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "PUT");
@@ -103,17 +110,26 @@ class DiscourseAPI
      *
      * @return mixed HTTP return code and API return object
      */
-    function group($groupname, $usernames = array())
+    function group($groupname, $usernames = array(), $aliaslevel = 3, $visible = 'true', 
+			$automemdomain = '', $automemretro = 'false', $title = '', 
+			$primegroup = 'false', $trustlevel = '0' )
     {
+
 	$groupId = $this->getGroupIdByGroupName($groupname);
         if ($groupId) {
             return false;
         }
         $params = array(
             'group' => array(
-                'name' => $groupname,
-                'usernames' => implode(',', $usernames),
-		'alias_level' => '0'
+                'name' 					=> $groupname,
+	 	'usernames'                             => implode(',', $usernames),
+                'alias_level' 				=> $aliaslevel,
+                'visible' 				=> $visible,
+                'automatic_membership_email_domains' 	=> $automemdomain,
+                'automatic_membership_retroactive' 	=> $automemretro,
+                'title' 				=> $title,
+                'primary_group' 			=> $primegroup,
+                'grant_trust_level' 			=> $trustlevel
             )
         );
         return $this->_postRequest('/admin/groups', $params);
