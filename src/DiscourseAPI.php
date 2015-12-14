@@ -83,9 +83,15 @@ class DiscourseAPI
 
 	// http_build_query was causing a problem - this works
 	$query = '';
-        foreach ($paramArray['group'] as $param => $value) {
-           $query .= $param.'='.$value .'&';
-        }
+	if (isset($paramArray['group'])) {
+        	foreach ($paramArray['group'] as $param => $value) {
+           		$query .= $param.'='.$value .'&';
+        	}
+	} else {
+        	foreach ($paramArray as $param => $value) {
+           		$query .= $param.'='.$value .'&';
+        	}
+	}
         $query = trim($query, '&');
         curl_setopt($ch, CURLOPT_POSTFIELDS, $query );
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
