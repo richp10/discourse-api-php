@@ -93,7 +93,6 @@ class DiscourseAPI
         	}
 	}
         $query = trim($query, '&');
-#return($url.' '.$query);
         curl_setopt($ch, CURLOPT_POSTFIELDS, $query );
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
         if ($putMethod) {
@@ -146,21 +145,20 @@ class DiscourseAPI
      * Edit Category
      * 
      * @param integer $catid
-     * @param string $allow_badges
-     * @param string $auto_close_based_on_last_post
-     * @param string $auto_close_hours	
+     * @param string  $allow_badges
+     * @param string  $auto_close_based_on_last_post
+     * @param string  $auto_close_hours	
      * @param string  $background_url	
      * @param string  $color
-     * @param string $contains_messages
+     * @param string  $contains_messages
      * @param string  $email_in	
-     * @param string $email_in_allow_strangers
+     * @param string  $email_in_allow_strangers
      * @param string  $logo_url	
      * @param string  $name	
      * @param integer $parent_category_id	
-     * @param integer $permissions[GROUPNAME]
      * @param integer $position	
      * @param string  $slug	
-     * @param string $suppress_from_homepage
+     * @param string  $suppress_from_homepage
      * @param string  $text_color
      * @param string  $topic_template	
      * @param array   $permissions 
@@ -462,16 +460,16 @@ class DiscourseAPI
     {
 	$groupId = $this->getGroupIdByGroupName($groupname);
         if (!$groupId) {
-            $this->group($groupname, array($username));
+	    return false;
          } else {
-            $user = $this->getUserByUserName($username)->apiresult->user;
             $params = array(
-                'group_id' => $groupId
+                'usernames' => $username
             );
-             return $this->_postRequest('/admin/users/' . $user->id . '/groups', $params);
+         return $this->_putRequest('/groups/' . $groupId . '/members.json', $params);
          }
      }
 
 
 }
+
 
