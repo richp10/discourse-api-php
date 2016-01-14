@@ -141,6 +141,61 @@ class DiscourseAPI
         return $this->_postRequest('/admin/groups', $params);
     }
 
+     /**
+     * Edit Category
+     * 
+     * @param integer $catid
+     * @param boolean $allow_badges
+     * @param boolean $auto_close_based_on_last_post
+     * @param boolean $auto_close_hours	
+     * @param string  $background_url	
+     * @param string  $color
+     * @param boolean $contains_messages
+     * @param string  $email_in	
+     * @param boolean $email_in_allow_strangers
+     * @param string  $logo_url	
+     * @param string  $name	
+     * @param integer $parent_category_id	
+     * @param integer $permissions[GROUPNAME]
+     * @param integer $position	
+     * @param string  $slug	
+     * @param boolean $suppress_from_homepage
+     * @param string  $text_color
+     * @param string  $topic_template	
+     *
+     * @return mixed HTTP return code and API return object
+     */
+     function updatecat($catid, $allow_badges = true,$auto_close_based_on_last_post=false,$auto_close_hours,$background_url,$color='0E76BD',
+		$contains_messages=false, $email_in, $email_in_allow_strangers=false, $logo_url, $name, $parent_category_id, 
+		$groupname, $position, $slug, $suppress_from_homepage=false, $text_color='FFFFFF', $topic_template )
+     {
+        if ($catid) {
+            return false;
+        }
+        $params = array(
+		'catid'				=> $catid,
+		'allow_badges'			=> $allow_badges,
+		'auto_close_based_on_last_post'	=> $auto_close_based_on_last_post,
+		'auto_close_hours'		=> $auto_close_hours,
+		'background_url'		=> $background_url,
+		'color'				=> $color,
+		'contains_messages'		=> $contains_messages,
+		'email_in'			=> $email_in,
+		'email_in_allow_strangers'	=> $email_in_allow_strangers,
+		'logo_url'			=> $logo_url,
+		'name'				=> $name,
+		'parent_category_id'		=> $parent_category_id,
+		'permissions[$groupname]'	=> $groupname,
+		'position'			=> $position,
+		'slug'				=> $slug,
+		'suppress_from_homepage'	=> $suppress_from_homepage,
+		'text_color'			=> $text_color,
+		'topic_template'		=> $topic_template
+            )
+        );
+        return $this->_postRequest('/category/'.$catid, $params);
+     }
+
 
      /**
      * getCategories
