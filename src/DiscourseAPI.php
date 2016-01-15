@@ -44,17 +44,21 @@ class DiscourseAPI
             $reqString, 
             http_build_query($paramArray)
         );
-
         curl_setopt($ch, CURLOPT_URL, $url);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
 	curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
         $body = curl_exec($ch);
         $rc = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
-
         $resObj = new \stdClass();
         $resObj->http_code = $rc;
-        $resObj->apiresult = json_decode($body);
+	// Only return valid json
+        $json = json_decode($body);
+	if (json_last_error() == JSON_ERROR_NONE) {
+        	$resObj->apiresult = $json;
+	} else {
+		$resObj->apiresult = $body;
+	}
         return $resObj;
     }
 
@@ -207,6 +211,11 @@ class DiscourseAPI
     function getCategories()
     {
         return $this->_getRequest("/categories.json");
+    }
+
+    function getPostsByNumber( $topic_id, $post_number )
+    {
+	return $this->_getRequest("/posts/by_number/".$topic_id.'/'.$post_number.'.json');
     }
 
     /**
@@ -449,7 +458,7 @@ class DiscourseAPI
 
      /**
      * addUserToGroup
-     *
+     * Richard Phillips changed this to PUT /groups/
      * @param string $groupname    name of group
      * @param string $username     user to add to the group
      *
