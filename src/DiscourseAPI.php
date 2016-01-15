@@ -3,15 +3,15 @@
 /**
   * Discourse API client for PHP
   *
-  * This is the Discourse API client for PHP
-  * This is a very experimental API implementation.
+  * Expanded on original by DiscourseHosting
   *
   * @category  DiscourseAPI
   * @package   DiscourseAPI
   * @author    Original author DiscourseHosting <richard@discoursehosting.com>
+  * Additional work, timolaine, richp10 and others..
   * @copyright 2013, DiscourseHosting.com
   * @license   http://www.gnu.org/licenses/gpl-2.0.html GPLv2 
-  * @link      https://github.com/discoursehosting/discourse-api-php
+  * @link      https://github.com/richp10/discourse-api-php
   */
 
 namespace richp10\discourseAPI;
@@ -62,17 +62,22 @@ class DiscourseAPI
         return $resObj;
     }
 
+    private function _deleteRequest($reqString, $paramArray, $apiUser = 'system')
+    {
+        return $this->_putpostRequest($reqString, $paramArray, $apiUser, "DELETE" );
+    }
+
     private function _putRequest($reqString, $paramArray, $apiUser = 'system')
     {
-        return $this->_putpostRequest($reqString, $paramArray, $apiUser, true);
+        return $this->_putpostRequest($reqString, $paramArray, $apiUser, "PUT" );
     }
 
     private function _postRequest($reqString, $paramArray, $apiUser = 'system')
     {
-        return $this->_putpostRequest($reqString, $paramArray, $apiUser, false);
+        return $this->_putpostRequest($reqString, $paramArray, $apiUser, "POST" );
     }
 
-    private function _putpostRequest($reqString, $paramArray, $apiUser = 'system', $putMethod = false)
+    private function _putpostRequest($reqString, $paramArray, $apiUser = 'system', $HTTPMETHOD = "POST" )
     {
         $ch = curl_init();
         $url = sprintf(
@@ -84,8 +89,6 @@ class DiscourseAPI
             $apiUser
         );
         curl_setopt($ch, CURLOPT_URL, $url);
-
-	// http_build_query was causing a problem - this works
 	$query = '';
 	if (isset($paramArray['group'])) {
         	foreach ($paramArray['group'] as $param => $value) {
@@ -99,16 +102,18 @@ class DiscourseAPI
         $query = trim($query, '&');
         curl_setopt($ch, CURLOPT_POSTFIELDS, $query );
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-        if ($putMethod) {
-            curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "PUT");
-        }
+	curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $HTTPMETHOD );
         $body = curl_exec($ch);
         $rc = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
-
-        $resObj = new \stdClass();
+	$resObj = new \stdClass();
+        $json = json_decode($body);
+        if (json_last_error() == JSON_ERROR_NONE) {
+                $resObj->apiresult = $json;
+        } else {
+                $resObj->apiresult = $body;
+        }
         $resObj->http_code = $rc;
-        $resObj->apiresult = json_decode($body);
         return $resObj;
     }
 
@@ -120,7 +125,7 @@ class DiscourseAPI
      *
      * @return mixed HTTP return code and API return object
      */
-    function group($groupname, $usernames = array(), $aliaslevel = 3, $visible = 'true', 
+    function addGroup($groupname, $usernames = array(), $aliaslevel = 3, $visible = 'true', 
 			$automemdomain = '', $automemretro = 'false', $title = '', 
 			$primegroup = 'false', $trustlevel = '0' )
     {
@@ -144,6 +149,16 @@ class DiscourseAPI
         );
         return $this->_postRequest('/admin/groups', $params);
     }
+
+    function removeGroup($groupname)
+    {
+        $groupId = $this->getGroupIdByGroupName($groupname);
+        if (!$groupId) {
+            return false;
+         } else {
+         	return $this->_deleteRequest('/admin/groups/'.$groupId);
+         }
+     }
 
      /**
      * Edit Category
@@ -362,7 +377,6 @@ class DiscourseAPI
         return $this->_postRequest('/posts', $params, $userName);
     }
 
-
      function getCategory($categoryName) {
 	return $this->_getRequest("/c/{$categoryName}.json");	
      }
@@ -393,6 +407,22 @@ class DiscourseAPI
         return $this->_postRequest('/posts', $params, $userName);
     }
 
+    /**
+     * UpdatePost
+     *
+     */
+
+    function updatePost($bodyhtml, $post_id, $userName='system')
+    {
+	$bodyraw = htmlspecialchars_decode( $bodyhtml );
+        $params = array(
+            'post[cooked]' => $bodyhtml,
+            'post[edit_reason]' => '',
+            'post[raw]' => $bodyraw
+        );
+        return $this->_putRequest('/posts/'.$post_id, $params, $userName);
+    }
+
     function inviteUser($email, $topicId, $userName = 'system')
     {
         $params = array(
@@ -407,8 +437,6 @@ class DiscourseAPI
         $params = array($siteSetting => $value);
         return $this->_putRequest('/admin/site_settings/' . $siteSetting, $params);
     }
-
-# these are mostly from timolaine
 
      /**
      * getUserByEmail
@@ -457,15 +485,14 @@ class DiscourseAPI
     }
 
      /**
-     * addUserToGroup
-     * Richard Phillips changed this to PUT /groups/
+     * joinGroup / leaveGroup
      * @param string $groupname    name of group
      * @param string $username     user to add to the group
      *
      * @return mixed HTTP return code and API return object
      */
 
-    function addUserToGroup($groupname, $username)
+    function joinGroup($groupname, $username)
     {
 	$groupId = $this->getGroupIdByGroupName($groupname);
         if (!$groupId) {
@@ -474,10 +501,24 @@ class DiscourseAPI
             $params = array(
                 'usernames' => $username
             );
-         return $this->_putRequest('/groups/' . $groupId . '/members.json', $params);
+         return $this->_putRequest('/groups/' . $groupId . '/members', $params);
          }
      }
 
+    function leaveGroup($groupname, $username)
+    {
+        $groupId = $this->getGroupIdByGroupName($groupname);
+        if (!$groupId) {
+            return false;
+         } else {
+            $params = array(
+                'usernames' => $username
+            );
+
+         return $this->_deleteRequest('/admin/groups/'.$groupId.'/members', $params);
+	}
+
+     }
 
 }
 
