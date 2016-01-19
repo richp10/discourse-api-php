@@ -49,6 +49,7 @@ class DiscourseAPI
             $reqString, 
             http_build_query($paramArray)
         );
+echo $url;
         curl_setopt($ch, CURLOPT_URL, $url);
         curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $HTTPMETHOD );
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
@@ -518,6 +519,19 @@ class DiscourseAPI
             );
          return $this->_deleteRequest('/groups/'.$groupId.'/members.json', $params);
 	}
+     }
+
+     /**
+     * topTopics
+     * @param string $category    name of category
+     * @param string $period      daily, weekly, monthly, yearly
+     *
+     * @return mixed HTTP return code and API return object
+     */
+
+    function topTopics($category, $period = 'daily')
+    {
+         return $this->_getRequest('/c/'.$category.'/l/top/'.$period.'.json');
      }
 
 }
