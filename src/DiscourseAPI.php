@@ -29,7 +29,12 @@ class DiscourseAPI
         $this->_protocol=$protocol;
     }
 
-    private function _getRequest($reqString, $paramArray = null, $apiUser = 'system')
+    private function _deleteRequest($reqString, $paramArray, $apiUser = 'system')
+    {
+        return $this->_getRequest($reqString, $paramArray, $apiUser, "DELETE" );
+    }
+
+    private function _getRequest($reqString, $paramArray = null, $apiUser = 'system', $HTTPMETHOD = "GET" )
     {
         if ($paramArray == null) {
             $paramArray = array();
@@ -45,6 +50,7 @@ class DiscourseAPI
             http_build_query($paramArray)
         );
         curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $HTTPMETHOD );
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
 	curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
         $body = curl_exec($ch);
@@ -60,11 +66,6 @@ class DiscourseAPI
 		$resObj->apiresult = $body;
 	}
         return $resObj;
-    }
-
-    private function _deleteRequest($reqString, $paramArray, $apiUser = 'system')
-    {
-        return $this->_putpostRequest($reqString, $paramArray, $apiUser, "DELETE" );
     }
 
     private function _putRequest($reqString, $paramArray, $apiUser = 'system')
@@ -485,7 +486,7 @@ class DiscourseAPI
     }
 
      /**
-     * joinGroup / leaveGroup
+     * joinGroup 
      * @param string $groupname    name of group
      * @param string $username     user to add to the group
      *
@@ -507,17 +508,16 @@ class DiscourseAPI
 
     function leaveGroup($groupname, $username)
     {
+        $userid=$this->getUserByUsername($username)->apiresult->user->id;
         $groupId = $this->getGroupIdByGroupName($groupname);
         if (!$groupId) {
             return false;
          } else {
             $params = array(
-                'usernames' => $username
+                'user_id' => $userid
             );
-
-         return $this->_deleteRequest('/admin/groups/'.$groupId.'/members', $params);
+         return $this->_deleteRequest('/groups/'.$groupId.'/members.json', $params);
 	}
-
      }
 
 }
