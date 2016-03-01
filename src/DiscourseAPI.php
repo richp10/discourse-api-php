@@ -41,6 +41,7 @@ class DiscourseAPI
         }
         $paramArray['api_key'] = $this->_apiKey;
         $paramArray['api_username'] = $apiUser;
+        $paramArray['show_emails'] = 'true';
         $ch = curl_init();
         $url = sprintf(
             '%s://%s%s?%s',
