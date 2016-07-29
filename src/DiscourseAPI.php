@@ -398,12 +398,11 @@ class DiscourseAPI
      * NOT WORKING YET
      */
 
-    function createPost($bodyText, $topicId, $categoryId, $userName)
+    function createPost($bodyText, $topicId, $userName)
     {
         $params = array(
             'raw' => $bodyText,
             'archetype' => 'regular',
-            'category' => $categoryId,
             'topic_id' => $topicId
         );
         return $this->_postRequest('/posts', $params, $userName);
