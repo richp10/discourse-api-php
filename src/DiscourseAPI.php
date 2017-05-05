@@ -502,7 +502,7 @@ class DiscourseAPI
             $params = array(
                 'usernames' => $username
             );
-         return $this->_putRequest('/groups/' . $groupId . '/members', $params);
+         return $this->_putRequest('/groups/' . $groupId . '/members.json', $params);
          }
      }
 
