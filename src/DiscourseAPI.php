@@ -98,7 +98,7 @@ class DiscourseAPI
         	}
 	} else {
         	foreach ($paramArray as $param => $value) {
-           		$query .= $param.'='.$value .'&';
+           		$query .= $param.'='. urlencode($value) .'&';
         	}
 	}
         $query = trim($query, '&');
