@@ -34,7 +34,14 @@ class DiscourseAPI
         return $this->_getRequest($reqString, $paramArray, $apiUser, 'DELETE');
     }
 
-    private function _getRequest($reqString, $paramArray = null, $apiUser = 'system', $HTTPMETHOD = 'GET')
+  /**
+   * @param        $reqString
+   * @param null   $paramArray
+   * @param string $apiUser
+   * @param string $HTTPMETHOD
+   * @return \stdClass
+   */
+  private function _getRequest($reqString, $paramArray = null, $apiUser = 'system', $HTTPMETHOD = 'GET')
     {
         if ($paramArray == null) {
             $paramArray = array();
@@ -106,14 +113,21 @@ class DiscourseAPI
         return $resObj;
     }
 
-    /**
-     * group
-     *
-     * @param string $groupname     name of group to be created
-     * @param string $usernames     users in the group
-     *
-     * @return mixed HTTP return code and API return object
-     */
+  /**
+   * group
+   *
+   * @param string       $groupname name of group to be created
+   * @param array|string $usernames users in the group
+   *
+   * @param int          $aliaslevel
+   * @param string       $visible
+   * @param string       $automemdomain
+   * @param string       $automemretro
+   * @param string       $title
+   * @param string       $primegroup
+   * @param string       $trustlevel
+   * @return mixed HTTP return code and API return object
+   */
     function addGroup($groupname, $usernames = array(), $aliaslevel = 3, $visible = 'true', $automemdomain = '', $automemretro = 'false', $title = '', $primegroup = 'false', $trustlevel = '0')
     {
         $groupId = $this->getGroupIdByGroupName($groupname);
@@ -146,29 +160,30 @@ class DiscourseAPI
         }
     }
 
-    /**
-     * Edit Category
-     *
-     * @param integer $catid
-     * @param string  $allow_badges
-     * @param string  $auto_close_based_on_last_post
-     * @param string  $auto_close_hours
-     * @param string  $background_url
-     * @param string  $color
-     * @param string  $contains_messages
-     * @param string  $email_in
-     * @param string  $email_in_allow_strangers
-     * @param string  $logo_url
-     * @param string  $name
-     * @param integer $parent_category_id
-     * @param integer $position
-     * @param string  $slug
-     * @param string  $suppress_from_homepage
-     * @param string  $text_color
-     * @param string  $topic_template
-     * @param array   $permissions
-     * @return mixed HTTP return code and API return object
-     */
+  /**
+   * Edit Category
+   *
+   * @param integer    $catid
+   * @param string     $allow_badges
+   * @param string     $auto_close_based_on_last_post
+   * @param string     $auto_close_hours
+   * @param string     $background_url
+   * @param string     $color
+   * @param string     $contains_messages
+   * @param string     $email_in
+   * @param string     $email_in_allow_strangers
+   * @param string     $logo_url
+   * @param string     $name
+   * @param int|string $parent_category_id
+   * @param            $groupname
+   * @param int|string $position
+   * @param string     $slug
+   * @param string     $suppress_from_homepage
+   * @param string     $text_color
+   * @param string     $topic_template
+   * @param array      $permissions
+   * @return mixed HTTP return code and API return object
+   */
     function updatecat($catid, $allow_badges = 'true', $auto_close_based_on_last_post = 'false', $auto_close_hours = '', $background_url, $color = '0E76BD', $contains_messages = 'false', $email_in = '', $email_in_allow_strangers = 'false', $logo_url = '', $name = '', $parent_category_id = '', $groupname, $position = '', $slug = '', $suppress_from_homepage = 'false', $text_color = 'FFFFFF', $topic_template = '', $permissions)
     {
         $params = array(
@@ -211,11 +226,13 @@ class DiscourseAPI
         return $this->_getRequest('/categories.json');
     }
 
-    /**
-     * getPostsByNumber
-     *
-     * @return mixed HTTP return code and API return object
-     */
+  /**
+   * getPostsByNumber
+   *
+   * @param $topic_id
+   * @param $post_number
+   * @return mixed HTTP return code and API return object
+   */
     function getPostsByNumber($topic_id, $post_number)
     {
         return $this->_getRequest('/posts/by_number/' . $topic_id . '/' . $post_number . '.json');
@@ -334,17 +351,17 @@ class DiscourseAPI
         return $this->_postRequest('/categories', $params, $userName);
     }
 
-    /**
-     * createTopic
-     *
-     * @param string $topicTitle   title of topic
-     * @param string $bodyText     body text of topic post
-     * @param string $categoryName category to create topic in
-     * @param string $userName     user to create topic as
-     * @param string $replyToId    post id to reply as
-     *
-     * @return mixed HTTP return code and API return object
-     */
+  /**
+   * createTopic
+   *
+   * @param string     $topicTitle title of topic
+   * @param string     $bodyText   body text of topic post
+   * @param            $categoryId
+   * @param string     $userName   user to create topic as
+   * @param int|string $replyToId  post id to reply as
+   * @return mixed HTTP return code and API return object
+   * @internal param string $categoryName category to create topic in
+   */
     function createTopic($topicTitle, $bodyText, $categoryId, $userName, $replyToId = 0)
     {
         $params = array(
@@ -362,20 +379,27 @@ class DiscourseAPI
         return $this->_getRequest("/c/{$categoryName}.json");
     }
 
-    /**
-     * getTopic
-     *
-     */
+  /**
+   * getTopic
+   *
+   * @param $topicId
+   * @return \stdClass
+   */
     function getTopic($topicId)
     {
         return $this->_getRequest("/t/{$topicId}.json");
     }
 
-    /**
-     * createPost
-     *
-     * NOT WORKING YET
-     */
+  /**
+   * createPost
+   *
+   * NOT WORKING YET
+   *
+   * @param $bodyText
+   * @param $topicId
+   * @param $userName
+   * @return \stdClass
+   */
     function createPost($bodyText, $topicId, $userName)
     {
         $params = array(
@@ -386,10 +410,14 @@ class DiscourseAPI
         return $this->_postRequest('/posts', $params, $userName);
     }
 
-    /**
-     * UpdatePost
-     *
-     */
+  /**
+   * UpdatePost
+   *
+   * @param        $bodyhtml
+   * @param        $post_id
+   * @param string $userName
+   * @return \stdClass
+   */
     function updatePost($bodyhtml, $post_id, $userName = 'system')
     {
         $bodyraw = htmlspecialchars_decode($bodyhtml);
