@@ -17,29 +17,42 @@
   namespace richp10\discourseAPI;
 
   class DiscourseAPI {
-    private $_protocol   = 'http';
-    private $_apiKey     = null;
-    private $_dcHostname = null;
+    private $_protocol;
+    private $_apiKey;
+    private $_dcHostname;
 
-    function __construct($dcHostname, $apiKey = null, $protocol = 'http') {
+    /**
+     * DiscourseAPI constructor.
+     *
+     * @param        $dcHostname
+     * @param null   $apiKey
+     * @param string $protocol
+     */
+    public function __construct($dcHostname, $apiKey = null, $protocol = 'http') {
       $this->_dcHostname = $dcHostname;
       $this->_apiKey     = $apiKey;
       $this->_protocol   = $protocol;
     }
 
-    private function _deleteRequest($reqString, $paramArray, $apiUser = 'system') {
-      return $this->_getRequest($reqString, $paramArray, $apiUser, 'DELETE');
-    }
-
     /**
      * @param        $reqString
-     * @param null   $paramArray
+     * @param        $paramArray
      * @param string $apiUser
-     * @param string $HTTPMETHOD
+     * @return \stdClass
+     */
+    private function _deleteRequest($reqString, $paramArray, $apiUser = 'system') {
+      return $this->_getRequest($reqString, $paramArray, $apiUser, 'DELETE');
+    }/** @noinspection MoreThanThreeArgumentsInspection */
+
+    /**
+     * @param            $reqString
+     * @param null|array $paramArray
+     * @param string     $apiUser
+     * @param string     $HTTPMETHOD
      * @return \stdClass
      */
     private function _getRequest($reqString, $paramArray = null, $apiUser = 'system', $HTTPMETHOD = 'GET') {
-      if ($paramArray == null) {
+      if ($paramArray === null) {
         $paramArray = [];
       }
       $paramArray['api_key']      = $this->_apiKey;
@@ -67,15 +80,34 @@
       return $resObj;
     }
 
+    /**
+     * @param        $reqString
+     * @param        $paramArray
+     * @param string $apiUser
+     * @return \stdClass
+     */
     private function _putRequest($reqString, $paramArray, $apiUser = 'system') {
       return $this->_putpostRequest($reqString, $paramArray, $apiUser, 'PUT');
     }
 
+    /**
+     * @param        $reqString
+     * @param        $paramArray
+     * @param string $apiUser
+     * @return \stdClass
+     */
     private function _postRequest($reqString, $paramArray, $apiUser = 'system') {
       return $this->_putpostRequest($reqString, $paramArray, $apiUser, 'POST');
     }
 
-    private function _putpostRequest($reqString, $paramArray, $apiUser = 'system', $HTTPMETHOD = 'POST') {
+    /** @noinspection MoreThanThreeArgumentsInspection
+     * @param string $reqString
+     * @param array  $paramArray
+     * @param string $apiUser
+     * @param string $HTTPMETHOD
+     * @return \stdClass
+     */
+    private function _putpostRequest($reqString, array $paramArray, $apiUser = 'system', $HTTPMETHOD = 'POST') {
       $ch  = curl_init();
       $url = sprintf('%s://%s%s?api_key=%s&api_username=%s', $this->_protocol, $this->_dcHostname, $reqString, $this->_apiKey, $apiUser);
       curl_setopt($ch, CURLOPT_URL, $url);
@@ -106,13 +138,13 @@
       $resObj->http_code = $rc;
 
       return $resObj;
-    }
+    }/** @noinspection MoreThanThreeArgumentsInspection */
 
     /**
      * group
      *
      * @param string       $groupname name of group to be created
-     * @param array|string $usernames users in the group
+     * @param array        $usernames users in the group
      *
      * @param int          $aliaslevel
      * @param string       $visible
@@ -123,8 +155,9 @@
      * @param string       $trustlevel
      * @return mixed HTTP return code and API return object
      */
-    function addGroup($groupname, $usernames = [], $aliaslevel = 3, $visible = 'true', $automemdomain = '', $automemretro = 'false', $title = '',
-                      $primegroup = 'false', $trustlevel = '0') {
+    public function addGroup($groupname, array $usernames = [], $aliaslevel = 3, $visible = 'true', $automemdomain = '', $automemretro = 'false',
+                             $title = '',
+                             $primegroup = 'false', $trustlevel = '0') {
       $groupId = $this->getGroupIdByGroupName($groupname);
       if ($groupId) {
         return false;
@@ -146,15 +179,20 @@
       return $this->_postRequest('/admin/groups', $params);
     }
 
-    function removeGroup($groupname) {
+    /**
+     * @param $groupname
+     * @return bool|\stdClass
+     */
+    public function removeGroup($groupname) {
       $groupId = $this->getGroupIdByGroupName($groupname);
       if (!$groupId) {
         return false;
-      } else {
-        return $this->_deleteRequest('/admin/groups/' . $groupId);
       }
+
+      return $this->_deleteRequest('/admin/groups/' . $groupId);
     }
 
+    /** @noinspection MoreThanThreeArgumentsInspection */
     /**
      * Edit Category
      *
@@ -179,10 +217,10 @@
      * @param array      $permissions
      * @return mixed HTTP return code and API return object
      */
-    function updatecat($catid, $allow_badges = 'true', $auto_close_based_on_last_post = 'false', $auto_close_hours = '', $background_url,
-                       $color = '0E76BD', $contains_messages = 'false', $email_in = '', $email_in_allow_strangers = 'false', $logo_url = '',
-                       $name = '', $parent_category_id = '', $groupname, $position = '', $slug = '', $suppress_from_homepage = 'false',
-                       $text_color = 'FFFFFF', $topic_template = '', $permissions) {
+    public function updatecat($catid, $allow_badges = 'true', $auto_close_based_on_last_post = 'false', $auto_close_hours = '', $background_url,
+                              $color = '0E76BD', $contains_messages = 'false', $email_in = '', $email_in_allow_strangers = 'false', $logo_url = '',
+                              $name = '', $parent_category_id = '', $groupname, $position = '', $slug = '', $suppress_from_homepage = 'false',
+                              $text_color = 'FFFFFF', $topic_template = '', $permissions) {
       $params = [
           'allow_badges'                  => $allow_badges,
           'auto_close_based_on_last_post' => $auto_close_based_on_last_post,
@@ -203,7 +241,7 @@
       ];
 
       # Add the permissions - this is an array of group names and integer permission values.
-      if (sizeof($permissions > 0)) {
+      if (count($permissions) > 0) {
         foreach ($permissions as $key => $value) {
           $params[ 'permissions[' . $key . ']' ] = $permissions[ $key ];
         }
@@ -218,7 +256,7 @@
      *
      * @return mixed HTTP return code and API return object
      */
-    function getCategories() {
+    public function getCategories() {
       return $this->_getRequest('/categories.json');
     }
 
@@ -229,7 +267,7 @@
      * @param $post_number
      * @return mixed HTTP return code and API return object
      */
-    function getPostsByNumber($topic_id, $post_number) {
+    public function getPostsByNumber($topic_id, $post_number) {
       return $this->_getRequest('/posts/by_number/' . $topic_id . '/' . $post_number . '.json');
     }
 
@@ -238,7 +276,7 @@
      *
      * @return mixed HTTP return code and API return object
      */
-    function getGroups() {
+    public function getGroups() {
       return $this->_getRequest('/admin/groups.json');
     }
 
@@ -248,9 +286,9 @@
      * @param string $group name of group
      * @return mixed HTTP return code and API return object
      */
-    function getGroupMembers($group) {
+    public function getGroupMembers($group) {
       return $this->_getRequest("/groups/{$group}/members.json");
-    }
+    }/** @noinspection MoreThanThreeArgumentsInspection */
 
     /**
      * createUser
@@ -262,7 +300,7 @@
      *
      * @return mixed HTTP return code and API return object
      */
-    function createUser($name, $userName, $emailAddress, $password) {
+    public function createUser($name, $userName, $emailAddress, $password) {
       $obj = $this->_getRequest('/users/hp.json');
       if ($obj->http_code != 200) {
         return false;
@@ -287,7 +325,7 @@
      *
      * @return mixed HTTP return code
      */
-    function activateUser($userId) {
+    public function activateUser($userId) {
       return $this->_putRequest("/admin/users/{$userId}/activate", []);
     }
 
@@ -298,7 +336,7 @@
      *
      * @return mixed HTTP return code and API return object
      */
-    function getUsernameByEmail($email) {
+    public function getUsernameByEmail($email) {
       $users = $this->_getRequest('/admin/users/list/active.json?filter=' . urlencode($email));
       foreach ($users->apiresult as $user) {
         if ($user->email === $email) {
@@ -316,9 +354,9 @@
      *
      * @return mixed HTTP return code and API return object
      */
-    function getUserByUsername($userName) {
+    public function getUserByUsername($userName) {
       return $this->_getRequest("/users/{$userName}.json");
-    }
+    }/** @noinspection MoreThanThreeArgumentsInspection */
 
     /**
      * createCategory
@@ -330,7 +368,7 @@
      *
      * @return mixed HTTP return code and API return object
      */
-    function createCategory($categoryName, $color, $textColor = '000000', $userName = 'system') {
+    public function createCategory($categoryName, $color, $textColor = '000000', $userName = 'system') {
       $params = [
           'name'       => $categoryName,
           'color'      => $color,
@@ -338,7 +376,7 @@
       ];
 
       return $this->_postRequest('/categories', $params, $userName);
-    }
+    }/** @noinspection MoreThanThreeArgumentsInspection */
 
     /**
      * createTopic
@@ -351,7 +389,7 @@
      * @return mixed HTTP return code and API return object
      * @internal param string $categoryName category to create topic in
      */
-    function createTopic($topicTitle, $bodyText, $categoryId, $userName, $replyToId = 0) {
+    public function createTopic($topicTitle, $bodyText, $categoryId, $userName, $replyToId = 0) {
       $params = [
           'title'                => $topicTitle,
           'raw'                  => $bodyText,
@@ -363,7 +401,7 @@
       return $this->_postRequest('/posts', $params, $userName);
     }
 
-    function getCategory($categoryName) {
+    public function getCategory($categoryName) {
       return $this->_getRequest("/c/{$categoryName}.json");
     }
 
@@ -373,7 +411,7 @@
      * @param $topicId
      * @return \stdClass
      */
-    function getTopic($topicId) {
+    public function getTopic($topicId) {
       return $this->_getRequest("/t/{$topicId}.json");
     }
 
@@ -387,7 +425,7 @@
      * @param $userName
      * @return \stdClass
      */
-    function createPost($bodyText, $topicId, $userName) {
+    public function createPost($bodyText, $topicId, $userName) {
       $params = [
           'raw'       => $bodyText,
           'archetype' => 'regular',
@@ -405,7 +443,7 @@
      * @param string $userName
      * @return \stdClass
      */
-    function updatePost($bodyhtml, $post_id, $userName = 'system') {
+    public function updatePost($bodyhtml, $post_id, $userName = 'system') {
       $bodyraw = htmlspecialchars_decode($bodyhtml);
       $params  = [
           'post[cooked]'      => $bodyhtml,
@@ -416,16 +454,27 @@
       return $this->_putRequest('/posts/' . $post_id, $params, $userName);
     }
 
-    function inviteUser($email, $topicId, $userName = 'system') {
+    /**
+     * @param        $email
+     * @param        $topicId
+     * @param string $userName
+     * @return \stdClass
+     */
+    public function inviteUser($email, $topicId, $userName = 'system') {
       $params = [
           'email'    => $email,
           'topic_id' => $topicId
       ];
 
-      return $this->_postRequest('/t/' . intval($topicId) . '/invite.json', $params, $userName);
+      return $this->_postRequest('/t/' . (int)$topicId . '/invite.json', $params, $userName);
     }
 
-    function changeSiteSetting($siteSetting, $value) {
+    /**
+     * @param $siteSetting
+     * @param $value
+     * @return \stdClass
+     */
+    public function changeSiteSetting($siteSetting, $value) {
       $params = [
           $siteSetting => $value
       ];
@@ -440,7 +489,7 @@
      *
      * @return mixed user object
      */
-    function getUserByEmail($email) {
+    public function getUserByEmail($email) {
       $users = $this->_getRequest('/admin/users/list/active.json', [
           'filter' => $email
       ]);
@@ -460,7 +509,7 @@
      *
      * @return mixed id of the group, or false if nonexistent
      */
-    function getGroupIdByGroupName($groupname) {
+    public function getGroupIdByGroupName($groupname) {
       $obj = $this->getGroups();
       if ($obj->http_code != 200) {
         return false;
@@ -468,7 +517,7 @@
 
       foreach ($obj->apiresult as $group) {
         if ($group->name === $groupname) {
-          $groupId = intval($group->id);
+          $groupId = (int)$group->id;
           break;
         }
         $groupId = false;
@@ -485,31 +534,35 @@
      *
      * @return mixed HTTP return code and API return object
      */
-    function joinGroup($groupname, $username) {
+    public function joinGroup($groupname, $username) {
       $groupId = $this->getGroupIdByGroupName($groupname);
       if (!$groupId) {
         return false;
-      } else {
-        $params = [
-            'usernames' => $username
-        ];
-
-        return $this->_putRequest('/groups/' . $groupId . '/members.json', $params);
       }
+
+      $params = [
+          'usernames' => $username
+      ];
+
+      return $this->_putRequest('/groups/' . $groupId . '/members.json', $params);
     }
 
-    function leaveGroup($groupname, $username) {
+    /**
+     * @param $groupname
+     * @param $username
+     * @return bool|\stdClass
+     */
+    public function leaveGroup($groupname, $username) {
       $userid  = $this->getUserByUsername($username)->apiresult->user->id;
       $groupId = $this->getGroupIdByGroupName($groupname);
       if (!$groupId) {
         return false;
-      } else {
-        $params = [
-            'user_id' => $userid
-        ];
-
-        return $this->_deleteRequest('/groups/' . $groupId . '/members.json', $params);
       }
+      $params = [
+          'user_id' => $userid
+      ];
+
+      return $this->_deleteRequest('/groups/' . $groupId . '/members.json', $params);
     }
 
     /**
@@ -520,7 +573,7 @@
      *
      * @return mixed HTTP return code and API return object
      */
-    function topTopics($category, $period = 'daily') {
+    public function topTopics($category, $period = 'daily') {
       return $this->_getRequest('/c/' . $category . '/l/top/' . $period . '.json');
     }
 
@@ -531,7 +584,7 @@
      *
      * @return mixed HTTP return code and API return object
      */
-    function latestTopics($category) {
+    public function latestTopics($category) {
       return $this->_getRequest('/c/' . $category . '/l/latest.json');
     }
 
