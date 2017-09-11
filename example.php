@@ -1,8 +1,8 @@
 <?php
 
-require_once "lib/DiscourseAPI.php";
+require_once 'lib/DiscourseAPI.php';
 
-$api = new DiscourseAPI("apitest.discoursehosting.net", API_KEY, API_HOST_PROTOCOL);
+$api = new DiscourseAPI('apitest.discoursehosting.net', API_KEY, API_HOST_PROTOCOL);
 
 // create user
 $r = $api->createUser('John Doe', 'johndoe', 'johndoe@discoursehosting.com', 'foobar!!');
@@ -27,7 +27,7 @@ $r = $api->createTopic(
     'This is the title of a brand new topic', 
     "This is the body text of a brand new topic. I really don't know what to say",
     $catId,
-    "johndoe"
+    'johndoe'
 );
 print_r($r);
 
