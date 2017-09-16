@@ -5,13 +5,13 @@
      *
      * Expanded on original by DiscourseHosting
      *
-     * @category  DiscourseAPI
-     * @package   DiscourseAPI
-     * @author    Original author DiscourseHosting <richard@discoursehosting.com>
+     * @category     DiscourseAPI
+     * @package      DiscourseAPI
+     * @author       Original author DiscourseHosting <richard@discoursehosting.com>
      * Additional work, timolaine, richp10 and others..
-     * @copyright 2013, DiscourseHosting.com
-     * @license   http://www.gnu.org/licenses/gpl-2.0.html GPLv2
-     * @link      https://github.com/richp10/discourse-api-php
+     * @copyright    2013, DiscourseHosting.com
+     * @license      http://www.gnu.org/licenses/gpl-2.0.html GPLv2
+     * @link         https://github.com/richp10/discourse-api-php
      *
      * @noinspection MoreThanThreeArgumentsInspection
      **/
@@ -39,29 +39,26 @@
         }
 
         /**
-         * @param        $reqString
-         * @param        $paramArray
+         * @param string $reqString
+         * @param array  $paramArray
          * @param string $apiUser
          * @return \stdClass
          */
-        private function _deleteRequest($reqString, $paramArray, $apiUser = 'system')
+        private function _deleteRequest(string $reqString, array $paramArray, string $apiUser = 'system'): \stdClass
         {
             return $this->_getRequest($reqString, $paramArray, $apiUser, 'DELETE');
-        }
+        }/** @noinspection MoreThanThreeArgumentsInspection */
 
         /**
-         * @param            $reqString
-         * @param null|array $paramArray
-         * @param string     $apiUser
-         * @param string     $HTTPMETHOD
+         * @param string $reqString
+         * @param array  $paramArray
+         * @param string $apiUser
+         * @param string $HTTPMETHOD
          * @return \stdClass
          * @noinspection MoreThanThreeArgumentsInspection
          **/
-        private function _getRequest($reqString, $paramArray = null, $apiUser = 'system', $HTTPMETHOD = 'GET')
+        private function _getRequest(string $reqString, array $paramArray = [], string $apiUser = 'system', $HTTPMETHOD = 'GET'): \stdClass
         {
-            if ($paramArray === null) {
-                $paramArray = [];
-            }
             $paramArray['api_key']      = $this->_apiKey;
             $paramArray['api_username'] = $apiUser;
             $paramArray['show_emails']  = 'true';
@@ -87,29 +84,29 @@
         }
 
         /**
-         * @param        $reqString
-         * @param        $paramArray
+         * @param string $reqString
+         * @param array  $paramArray
          * @param string $apiUser
          * @return \stdClass
          */
-        private function _putRequest($reqString, $paramArray, $apiUser = 'system')
+        private function _putRequest(string $reqString, array $paramArray, string $apiUser = 'system'): \stdClass
         {
             return $this->_putpostRequest($reqString, $paramArray, $apiUser, 'PUT');
         }
 
         /**
-         * @param        $reqString
-         * @param        $paramArray
+         * @param string $reqString
+         * @param array  $paramArray
          * @param string $apiUser
          * @return \stdClass
          */
-        private function _postRequest($reqString, $paramArray, $apiUser = 'system')
+        private function _postRequest(string $reqString, array $paramArray, string $apiUser = 'system'): \stdClass
         {
-            /** @noinspection ArgumentEqualsDefaultValueInspection **/
+            /** @noinspection ArgumentEqualsDefaultValueInspection * */
             return $this->_putpostRequest($reqString, $paramArray, $apiUser, 'POST');
         }
 
-        /** @noinspection MoreThanThreeArgumentsInspection **/
+        /** @noinspection MoreThanThreeArgumentsInspection * */
         /**
          * @param string $reqString
          * @param array  $paramArray
@@ -117,18 +114,16 @@
          * @param string $HTTPMETHOD
          * @return \stdClass
          **/
-        private function _putpostRequest($reqString, array $paramArray, $apiUser = 'system', $HTTPMETHOD = 'POST')
+        private function _putpostRequest(string $reqString, array $paramArray, string $apiUser = 'system', $HTTPMETHOD = 'POST'): \stdClass
         {
             $ch  = curl_init();
             $url = sprintf('%s://%s%s?api_key=%s&api_username=%s', $this->_protocol, $this->_dcHostname, $reqString, $this->_apiKey, $apiUser);
             curl_setopt($ch, CURLOPT_URL, $url);
             $query = '';
             if (isset($paramArray['group']) && is_array($paramArray['group'])) {
-                foreach ($paramArray['group'] as $param => $value) {
-                    $query .= $param . '=' . $value . '&';
-                }
+                $query = http_build_query($paramArray);
             } else {
-                foreach ($paramArray as $param => $value) {
+                foreach ($paramArray[0] as $param => $value) {
                     $query .= $param . '=' . urlencode($value) . '&';
                 }
             }
@@ -145,11 +140,13 @@
             if (json_last_error() === JSON_ERROR_NONE) {
                 $resObj->apiresult = $json;
             }
+
             $resObj->http_code = $rc;
 
             return $resObj;
         }
 
+        /** @noinspection MoreThanThreeArgumentsInspection */
         /**
          * group
          *
@@ -181,6 +178,7 @@
             if ($groupId) {
                 return false;
             }
+
             $params = [
                 'group' => [
                     'name'                               => $groupname,
@@ -199,20 +197,20 @@
         }
 
         /**
-         * @param $groupname
+         * @param string $groupname
          * @return bool|\stdClass
          */
-        public function removeGroup($groupname)
+        public function removeGroup(string $groupname)
         {
             $groupId = $this->getGroupIdByGroupName($groupname);
             if (!$groupId) {
                 return false;
             }
 
-            return $this->_deleteRequest('/admin/groups/', $groupId);
+            return $this->_deleteRequest('/admin/groups/', [$groupId]);
         }
 
-        /** @noinspection MoreThanThreeArgumentsInspection **/
+        /** @noinspection MoreThanThreeArgumentsInspection * */
         /**
          * Edit Category
          *
@@ -285,7 +283,7 @@
             }
 
             # This must PUT
-            return $this->_putRequest('/categories/' . $catid, $params);
+            return $this->_putRequest('/categories/' . $catid, [$params]);
         }
 
         /**
@@ -341,7 +339,7 @@
          *
          * @return mixed HTTP return code and API return object
          */
-        public function createUser($name, $userName, $emailAddress, $password)
+        public function createUser(string $name, string $userName, string $emailAddress, string $password)
         {
             $obj = $this->_getRequest('/users/hp.json');
             if ($obj->http_code !== 200) {
@@ -357,7 +355,7 @@
                 'password_confirmation' => $obj->apiresult->value
             ];
 
-            return $this->_postRequest('/users', $params);
+            return $this->_postRequest('/users', [$params]);
         }
 
         /**
@@ -403,7 +401,7 @@
             return $this->_getRequest("/users/{$userName}.json");
         }
 
-        /** @noinspection MoreThanThreeArgumentsInspection **/
+        /** @noinspection MoreThanThreeArgumentsInspection * */
         /**
          * createCategory
          *
@@ -414,7 +412,7 @@
          *
          * @return mixed HTTP return code and API return object
          **/
-        public function createCategory($categoryName, $color, $textColor = '000000', $userName = 'system')
+        public function createCategory(string $categoryName, string $color, string $textColor = '000000', string $userName = 'system')
         {
             $params = [
                 'name'       => $categoryName,
@@ -422,22 +420,22 @@
                 'text_color' => $textColor
             ];
 
-            return $this->_postRequest('/categories', $params, $userName);
+            return $this->_postRequest('/categories', [$params], $userName);
         }
 
-        /** @noinspection MoreThanThreeArgumentsInspection **/
+        /** @noinspection MoreThanThreeArgumentsInspection * */
         /**
          * createTopic
          *
-         * @param string     $topicTitle title of topic
-         * @param string     $bodyText   body text of topic post
-         * @param            $categoryId
-         * @param string     $userName   user to create topic as
-         * @param int|string $replyToId  post id to reply as
+         * @param string $topicTitle title of topic
+         * @param string $bodyText   body text of topic post
+         * @param string $categoryId
+         * @param string $userName   user to create topic as
+         * @param int    $replyToId  post id to reply as
          * @return mixed HTTP return code and API return object
          * @internal param string $categoryName category to create topic in
          **/
-        public function createTopic($topicTitle, $bodyText, $categoryId, $userName, $replyToId = 0)
+        public function createTopic(string $topicTitle, string $bodyText, string $categoryId, string $userName, int $replyToId = 0)
         {
             $params = [
                 'title'                => $topicTitle,
@@ -447,10 +445,14 @@
                 'reply_to_post_number' => $replyToId
             ];
 
-            return $this->_postRequest('/posts', $params, $userName);
+            return $this->_postRequest('/posts', [$params], $userName);
         }
 
-        public function getCategory($categoryName)
+        /**
+         * @param $categoryName
+         * @return \stdClass
+         */
+        public function getCategory($categoryName): \stdClass
         {
             return $this->_getRequest("/c/{$categoryName}.json");
         }
@@ -461,7 +463,7 @@
          * @param $topicId
          * @return \stdClass
          */
-        public function getTopic($topicId)
+        public function getTopic($topicId): \stdClass
         {
             return $this->_getRequest("/t/{$topicId}.json");
         }
@@ -476,7 +478,7 @@
          * @param $userName
          * @return \stdClass
          */
-        public function createPost($bodyText, $topicId, $userName)
+        public function createPost(string $bodyText, $topicId, string $userName): \stdClass
         {
             $params = [
                 'raw'       => $bodyText,
@@ -484,7 +486,7 @@
                 'topic_id'  => $topicId
             ];
 
-            return $this->_postRequest('/posts', $params, $userName);
+            return $this->_postRequest('/posts', [$params], $userName);
         }
 
         /**
@@ -495,7 +497,7 @@
          * @param string $userName
          * @return \stdClass
          */
-        public function updatePost($bodyhtml, $post_id, $userName = 'system')
+        public function updatePost($bodyhtml, $post_id, $userName = 'system'): \stdClass
         {
             $bodyraw = htmlspecialchars_decode($bodyhtml);
             $params  = [
@@ -504,7 +506,7 @@
                 'post[raw]'         => $bodyraw
             ];
 
-            return $this->_putRequest('/posts/' . $post_id, $params, $userName);
+            return $this->_putRequest('/posts/' . $post_id, [$params], $userName);
         }
 
         /**
@@ -513,14 +515,14 @@
          * @param string $userName
          * @return \stdClass
          */
-        public function inviteUser($email, $topicId, $userName = 'system')
+        public function inviteUser($email, $topicId, $userName = 'system'): \stdClass
         {
             $params = [
                 'email'    => $email,
                 'topic_id' => $topicId
             ];
 
-            return $this->_postRequest('/t/' . (int)$topicId . '/invite.json', $params, $userName);
+            return $this->_postRequest('/t/' . (int)$topicId . '/invite.json', [$params], $userName);
         }
 
         /**
@@ -528,13 +530,13 @@
          * @param $value
          * @return \stdClass
          */
-        public function changeSiteSetting($siteSetting, $value)
+        public function changeSiteSetting($siteSetting, $value): \stdClass
         {
             $params = [
                 $siteSetting => $value
             ];
 
-            return $this->_putRequest('/admin/site_settings/' . $siteSetting, $params);
+            return $this->_putRequest('/admin/site_settings/' . $siteSetting, [$params]);
         }
 
         /**
@@ -602,7 +604,7 @@
                 'usernames' => $username
             ];
 
-            return $this->_putRequest('/groups/' . $groupId . '/members.json', $params);
+            return $this->_putRequest('/groups/' . $groupId . '/members.json', [$params]);
         }
 
         /**
@@ -621,7 +623,7 @@
                 'user_id' => $userid
             ];
 
-            return $this->_deleteRequest('/groups/' . $groupId . '/members.json', $params);
+            return $this->_deleteRequest('/groups/' . $groupId . '/members.json', [$params]);
         }
 
         /**
