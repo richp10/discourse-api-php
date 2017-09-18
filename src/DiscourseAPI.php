@@ -24,126 +24,93 @@
         private $_apiKey;
         private $_dcHostname;
 
+        ////////////////  Groups
+
         /**
-         * DiscourseAPI constructor.
+         * getGroups
          *
-         * @param        $dcHostname
-         * @param null   $apiKey
-         * @param string $protocol
+         * @return mixed HTTP return code and API return object
          */
-        public function __construct($dcHostname, $apiKey = null, $protocol = 'http')
+        public function getGroups()
         {
-            $this->_dcHostname = $dcHostname;
-            $this->_apiKey     = $apiKey;
-            $this->_protocol   = $protocol;
+            return $this->_getRequest('/admin/groups.json');
         }
 
         /**
-         * @param string $reqString
-         * @param array  $paramArray
-         * @param string $apiUser
-         * @return \stdClass
+         * joinGroup
+         *
+         * @param string $groupname name of group
+         * @param string $username  user to add to the group
+         *
+         * @return mixed HTTP return code and API return object
          */
-        private function _deleteRequest(string $reqString, array $paramArray, string $apiUser = 'system'): \stdClass
+        public function joinGroup($groupname, $username)
         {
-            return $this->_getRequest($reqString, $paramArray, $apiUser, 'DELETE');
-        }/** @noinspection MoreThanThreeArgumentsInspection */
-
-        /**
-         * @param string $reqString
-         * @param array  $paramArray
-         * @param string $apiUser
-         * @param string $HTTPMETHOD
-         * @return \stdClass
-         * @noinspection MoreThanThreeArgumentsInspection
-         **/
-        private function _getRequest(string $reqString, array $paramArray = [], string $apiUser = 'system', $HTTPMETHOD = 'GET'): \stdClass
-        {
-            $paramArray['api_key']      = $this->_apiKey;
-            $paramArray['api_username'] = $apiUser;
-            $paramArray['show_emails']  = 'true';
-            $ch                         = curl_init();
-            $url                        = sprintf('%s://%s%s?%s', $this->_protocol, $this->_dcHostname, $reqString, http_build_query($paramArray));
-            curl_setopt($ch, CURLOPT_URL, $url);
-            curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $HTTPMETHOD);
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-            curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-            $body = curl_exec($ch);
-            $rc   = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-            curl_close($ch);
-            $resObj            = new \stdClass();
-            $resObj->http_code = $rc;
-            // Only return valid json
-            $json              = json_decode($body);
-            $resObj->apiresult = $body;
-            if (json_last_error() === JSON_ERROR_NONE) {
-                $resObj->apiresult = $json;
+            $groupId = $this->getGroupIdByGroupName($groupname);
+            if (!$groupId) {
+                return false;
             }
 
-            return $resObj;
+            $params = [
+                'usernames' => $username
+            ];
+
+            return $this->_putRequest('/groups/' . $groupId . '/members.json', [$params]);
         }
 
-        /**
-         * @param string $reqString
-         * @param array  $paramArray
-         * @param string $apiUser
-         * @return \stdClass
+        /*
+         * getGroupIdByGroupName
+         *
+         * @param string $groupname    name of group
+         *
+         * @return mixed id of the group, or false if nonexistent
          */
-        private function _putRequest(string $reqString, array $paramArray, string $apiUser = 'system'): \stdClass
+        public function getGroupIdByGroupName($groupname)
         {
-            return $this->_putpostRequest($reqString, $paramArray, $apiUser, 'PUT');
-        }
+            $obj = $this->getGroups();
+            if ($obj->http_code !== 200) {
+                return false;
+            }
 
-        /**
-         * @param string $reqString
-         * @param array  $paramArray
-         * @param string $apiUser
-         * @return \stdClass
-         */
-        private function _postRequest(string $reqString, array $paramArray, string $apiUser = 'system'): \stdClass
-        {
-            /** @noinspection ArgumentEqualsDefaultValueInspection * */
-            return $this->_putpostRequest($reqString, $paramArray, $apiUser, 'POST');
-        }
-
-        /** @noinspection MoreThanThreeArgumentsInspection * */
-        /**
-         * @param string $reqString
-         * @param array  $paramArray
-         * @param string $apiUser
-         * @param string $HTTPMETHOD
-         * @return \stdClass
-         **/
-        private function _putpostRequest(string $reqString, array $paramArray, string $apiUser = 'system', $HTTPMETHOD = 'POST'): \stdClass
-        {
-            $ch  = curl_init();
-            $url = sprintf('%s://%s%s?api_key=%s&api_username=%s', $this->_protocol, $this->_dcHostname, $reqString, $this->_apiKey, $apiUser);
-            curl_setopt($ch, CURLOPT_URL, $url);
-            $query = '';
-            if (isset($paramArray['group']) && is_array($paramArray['group'])) {
-                $query = http_build_query($paramArray);
-            } else {
-                foreach ($paramArray[0] as $param => $value) {
-                    $query .= $param . '=' . urlencode($value) . '&';
+            foreach ($obj->apiresult as $group) {
+                if ($group->name === $groupname) {
+                    $groupId = (int)$group->id;
+                    break;
                 }
-            }
-            $query = trim($query, '&');
-            curl_setopt($ch, CURLOPT_POSTFIELDS, $query);
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-            curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $HTTPMETHOD);
-            $body = curl_exec($ch);
-            $rc   = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-            curl_close($ch);
-            $resObj            = new \stdClass();
-            $json              = json_decode($body);
-            $resObj->apiresult = $body;
-            if (json_last_error() === JSON_ERROR_NONE) {
-                $resObj->apiresult = $json;
+                $groupId = false;
             }
 
-            $resObj->http_code = $rc;
+            return $groupId;
+        }
 
-            return $resObj;
+        /**
+         * @param $groupname
+         * @param $username
+         * @return bool|\stdClass
+         */
+        public function leaveGroup($groupname, $username)
+        {
+            $userid  = $this->getUserByUsername($username)->apiresult->user->id;
+            $groupId = $this->getGroupIdByGroupName($groupname);
+            if (!$groupId) {
+                return false;
+            }
+            $params = [
+                'user_id' => $userid
+            ];
+
+            return $this->_deleteRequest('/groups/' . $groupId . '/members.json', [$params]);
+        }
+
+        /**
+         * getGroupMembers
+         *
+         * @param string $group name of group
+         * @return mixed HTTP return code and API return object
+         */
+        public function getGroupMembers($group)
+        {
+            return $this->_getRequest("/groups/{$group}/members.json");
         }
 
         /** @noinspection MoreThanThreeArgumentsInspection */
@@ -208,6 +175,39 @@
             }
 
             return $this->_deleteRequest('/admin/groups/', [$groupId]);
+        }
+
+        ///////////////   Categories
+
+        /** @noinspection MoreThanThreeArgumentsInspection * */
+        /**
+         * createCategory
+         *
+         * @param string $categoryName name of new category
+         * @param string $color        color code of new category (six hex chars, no #)
+         * @param string $textColor    optional color code of text for new category
+         * @param string $userName     optional user to create category as
+         *
+         * @return mixed HTTP return code and API return object
+         **/
+        public function createCategory(string $categoryName, string $color, string $textColor = '000000', string $userName = 'system')
+        {
+            $params = [
+                'name'       => $categoryName,
+                'color'      => $color,
+                'text_color' => $textColor
+            ];
+
+            return $this->_postRequest('/categories', [$params], $userName);
+        }
+
+        /**
+         * @param $categoryName
+         * @return \stdClass
+         */
+        public function getCategory($categoryName): \stdClass
+        {
+            return $this->_getRequest("/c/{$categoryName}.json");
         }
 
         /** @noinspection MoreThanThreeArgumentsInspection * */
@@ -296,39 +296,9 @@
             return $this->_getRequest('/categories.json');
         }
 
-        /**
-         * getPostsByNumber
-         *
-         * @param $topic_id
-         * @param $post_number
-         * @return mixed HTTP return code and API return object
-         */
-        public function getPostsByNumber($topic_id, $post_number)
-        {
-            return $this->_getRequest('/posts/by_number/' . $topic_id . '/' . $post_number . '.json');
-        }
+        //////////////   USERS
 
-        /**
-         * getGroups
-         *
-         * @return mixed HTTP return code and API return object
-         */
-        public function getGroups()
-        {
-            return $this->_getRequest('/admin/groups.json');
-        }
-
-        /**
-         * getGroupMembers
-         *
-         * @param string $group name of group
-         * @return mixed HTTP return code and API return object
-         */
-        public function getGroupMembers($group)
-        {
-            return $this->_getRequest("/groups/{$group}/members.json");
-        }/** @noinspection MoreThanThreeArgumentsInspection */
-
+        /** @noinspection MoreThanThreeArgumentsInspection */
         /**
          * createUser
          *
@@ -401,27 +371,99 @@
             return $this->_getRequest("/users/{$userName}.json");
         }
 
-        /** @noinspection MoreThanThreeArgumentsInspection * */
         /**
-         * createCategory
-         *
-         * @param string $categoryName name of new category
-         * @param string $color        color code of new category (six hex chars, no #)
-         * @param string $textColor    optional color code of text for new category
-         * @param string $userName     optional user to create category as
-         *
-         * @return mixed HTTP return code and API return object
-         **/
-        public function createCategory(string $categoryName, string $color, string $textColor = '000000', string $userName = 'system')
+         * @param        $email
+         * @param        $topicId
+         * @param string $userName
+         * @return \stdClass
+         */
+        public function inviteUser($email, $topicId, $userName = 'system'): \stdClass
         {
             $params = [
-                'name'       => $categoryName,
-                'color'      => $color,
-                'text_color' => $textColor
+                'email'    => $email,
+                'topic_id' => $topicId
             ];
 
-            return $this->_postRequest('/categories', [$params], $userName);
+            return $this->_postRequest('/t/' . (int)$topicId . '/invite.json', [$params], $userName);
         }
+
+        /**
+         * getUserByEmail
+         *
+         * @param string $email email of user
+         *
+         * @return mixed user object
+         */
+        public function getUserByEmail($email)
+        {
+            $users = $this->_getRequest('/admin/users/list/active.json', [
+                'filter' => $email
+            ]);
+            foreach ($users->apiresult as $user) {
+                if (strtolower($user->email) === strtolower($email)) {
+                    return $user;
+                }
+            }
+
+            return false;
+        }
+
+        ///////////////  POSTS
+
+        /**
+         * createPost
+         *
+         * NOT WORKING YET
+         *
+         * @param $bodyText
+         * @param $topicId
+         * @param $userName
+         * @return \stdClass
+         */
+        public function createPost(string $bodyText, $topicId, string $userName): \stdClass
+        {
+            $params = [
+                'raw'       => $bodyText,
+                'archetype' => 'regular',
+                'topic_id'  => $topicId
+            ];
+
+            return $this->_postRequest('/posts', [$params], $userName);
+        }
+
+        /**
+         * getPostsByNumber
+         *
+         * @param $topic_id
+         * @param $post_number
+         * @return mixed HTTP return code and API return object
+         */
+        public function getPostsByNumber($topic_id, $post_number)
+        {
+            return $this->_getRequest('/posts/by_number/' . $topic_id . '/' . $post_number . '.json');
+        }
+
+        /**
+         * UpdatePost
+         *
+         * @param        $bodyhtml
+         * @param        $post_id
+         * @param string $userName
+         * @return \stdClass
+         */
+        public function updatePost($bodyhtml, $post_id, $userName = 'system'): \stdClass
+        {
+            $bodyraw = htmlspecialchars_decode($bodyhtml);
+            $params  = [
+                'post[cooked]'      => $bodyhtml,
+                'post[edit_reason]' => '',
+                'post[raw]'         => $bodyraw
+            ];
+
+            return $this->_putRequest('/posts/' . $post_id, [$params], $userName);
+        }
+
+        //////////////  TOPICS
 
         /** @noinspection MoreThanThreeArgumentsInspection * */
         /**
@@ -449,15 +491,6 @@
         }
 
         /**
-         * @param $categoryName
-         * @return \stdClass
-         */
-        public function getCategory($categoryName): \stdClass
-        {
-            return $this->_getRequest("/c/{$categoryName}.json");
-        }
-
-        /**
          * getTopic
          *
          * @param $topicId
@@ -466,164 +499,6 @@
         public function getTopic($topicId): \stdClass
         {
             return $this->_getRequest("/t/{$topicId}.json");
-        }
-
-        /**
-         * createPost
-         *
-         * NOT WORKING YET
-         *
-         * @param $bodyText
-         * @param $topicId
-         * @param $userName
-         * @return \stdClass
-         */
-        public function createPost(string $bodyText, $topicId, string $userName): \stdClass
-        {
-            $params = [
-                'raw'       => $bodyText,
-                'archetype' => 'regular',
-                'topic_id'  => $topicId
-            ];
-
-            return $this->_postRequest('/posts', [$params], $userName);
-        }
-
-        /**
-         * UpdatePost
-         *
-         * @param        $bodyhtml
-         * @param        $post_id
-         * @param string $userName
-         * @return \stdClass
-         */
-        public function updatePost($bodyhtml, $post_id, $userName = 'system'): \stdClass
-        {
-            $bodyraw = htmlspecialchars_decode($bodyhtml);
-            $params  = [
-                'post[cooked]'      => $bodyhtml,
-                'post[edit_reason]' => '',
-                'post[raw]'         => $bodyraw
-            ];
-
-            return $this->_putRequest('/posts/' . $post_id, [$params], $userName);
-        }
-
-        /**
-         * @param        $email
-         * @param        $topicId
-         * @param string $userName
-         * @return \stdClass
-         */
-        public function inviteUser($email, $topicId, $userName = 'system'): \stdClass
-        {
-            $params = [
-                'email'    => $email,
-                'topic_id' => $topicId
-            ];
-
-            return $this->_postRequest('/t/' . (int)$topicId . '/invite.json', [$params], $userName);
-        }
-
-        /**
-         * @param $siteSetting
-         * @param $value
-         * @return \stdClass
-         */
-        public function changeSiteSetting($siteSetting, $value): \stdClass
-        {
-            $params = [
-                $siteSetting => $value
-            ];
-
-            return $this->_putRequest('/admin/site_settings/' . $siteSetting, [$params]);
-        }
-
-        /**
-         * getUserByEmail
-         *
-         * @param string $email email of user
-         *
-         * @return mixed user object
-         */
-        public function getUserByEmail($email)
-        {
-            $users = $this->_getRequest('/admin/users/list/active.json', [
-                'filter' => $email
-            ]);
-            foreach ($users->apiresult as $user) {
-                if (strtolower($user->email) === strtolower($email)) {
-                    return $user;
-                }
-            }
-
-            return false;
-        }
-
-        /*
-         * getGroupIdByGroupName
-         *
-         * @param string $groupname    name of group
-         *
-         * @return mixed id of the group, or false if nonexistent
-         */
-        public function getGroupIdByGroupName($groupname)
-        {
-            $obj = $this->getGroups();
-            if ($obj->http_code !== 200) {
-                return false;
-            }
-
-            foreach ($obj->apiresult as $group) {
-                if ($group->name === $groupname) {
-                    $groupId = (int)$group->id;
-                    break;
-                }
-                $groupId = false;
-            }
-
-            return $groupId;
-        }
-
-        /**
-         * joinGroup
-         *
-         * @param string $groupname name of group
-         * @param string $username  user to add to the group
-         *
-         * @return mixed HTTP return code and API return object
-         */
-        public function joinGroup($groupname, $username)
-        {
-            $groupId = $this->getGroupIdByGroupName($groupname);
-            if (!$groupId) {
-                return false;
-            }
-
-            $params = [
-                'usernames' => $username
-            ];
-
-            return $this->_putRequest('/groups/' . $groupId . '/members.json', [$params]);
-        }
-
-        /**
-         * @param $groupname
-         * @param $username
-         * @return bool|\stdClass
-         */
-        public function leaveGroup($groupname, $username)
-        {
-            $userid  = $this->getUserByUsername($username)->apiresult->user->id;
-            $groupId = $this->getGroupIdByGroupName($groupname);
-            if (!$groupId) {
-                return false;
-            }
-            $params = [
-                'user_id' => $userid
-            ];
-
-            return $this->_deleteRequest('/groups/' . $groupId . '/members.json', [$params]);
         }
 
         /**
@@ -649,6 +524,148 @@
         public function latestTopics($category)
         {
             return $this->_getRequest('/c/' . $category . '/l/latest.json');
+        }
+
+        ////////////// MISC
+
+        /**
+         * @param $siteSetting
+         * @param $value
+         * @return \stdClass
+         */
+        public function changeSiteSetting($siteSetting, $value): \stdClass
+        {
+            $params = [
+                $siteSetting => $value
+            ];
+
+            return $this->_putRequest('/admin/site_settings/' . $siteSetting, [$params]);
+        }
+
+
+        //////////////// Private Functions
+
+        /** @noinspection MoreThanThreeArgumentsInspection */
+        /**
+         * @param string $reqString
+         * @param array  $paramArray
+         * @param string $apiUser
+         * @param string $HTTPMETHOD
+         * @return \stdClass
+         *
+         **/
+        private function _getRequest(string $reqString, array $paramArray = [], string $apiUser = 'system', $HTTPMETHOD = 'GET'): \stdClass
+        {
+            $paramArray['api_key']      = $this->_apiKey;
+            $paramArray['api_username'] = $apiUser;
+            $paramArray['show_emails']  = 'true';
+            $ch                         = curl_init();
+            $url                        = sprintf('%s://%s%s?%s', $this->_protocol, $this->_dcHostname, $reqString, http_build_query($paramArray));
+            curl_setopt($ch, CURLOPT_URL, $url);
+            curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $HTTPMETHOD);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+            curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+            $body = curl_exec($ch);
+            $rc   = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            curl_close($ch);
+            $resObj            = new \stdClass();
+            $resObj->http_code = $rc;
+            // Only return valid json
+            $json              = json_decode($body);
+            $resObj->apiresult = $body;
+            if (json_last_error() === JSON_ERROR_NONE) {
+                $resObj->apiresult = $json;
+            }
+
+            return $resObj;
+        }
+
+        /** @noinspection MoreThanThreeArgumentsInspection * */
+        /**
+         * @param string $reqString
+         * @param array  $paramArray
+         * @param string $apiUser
+         * @param string $HTTPMETHOD
+         * @return \stdClass
+         **/
+        private function _putpostRequest(string $reqString, array $paramArray, string $apiUser = 'system', $HTTPMETHOD = 'POST'): \stdClass
+        {
+            $ch  = curl_init();
+            $url = sprintf('%s://%s%s?api_key=%s&api_username=%s', $this->_protocol, $this->_dcHostname, $reqString, $this->_apiKey, $apiUser);
+            curl_setopt($ch, CURLOPT_URL, $url);
+            $query = '';
+            if (isset($paramArray['group']) && is_array($paramArray['group'])) {
+                $query = http_build_query($paramArray);
+            } else {
+                foreach ($paramArray[0] as $param => $value) {
+                    $query .= $param . '=' . urlencode($value) . '&';
+                }
+            }
+            $query = trim($query, '&');
+            curl_setopt($ch, CURLOPT_POSTFIELDS, $query);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+            curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $HTTPMETHOD);
+            $body = curl_exec($ch);
+            $rc   = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            curl_close($ch);
+            $resObj            = new \stdClass();
+            $json              = json_decode($body);
+            $resObj->apiresult = $body;
+            if (json_last_error() === JSON_ERROR_NONE) {
+                $resObj->apiresult = $json;
+            }
+
+            $resObj->http_code = $rc;
+
+            return $resObj;
+        }
+
+        /**
+         * @param string $reqString
+         * @param array  $paramArray
+         * @param string $apiUser
+         * @return \stdClass
+         */
+        private function _deleteRequest(string $reqString, array $paramArray, string $apiUser = 'system'): \stdClass
+        {
+            return $this->_getRequest($reqString, $paramArray, $apiUser, 'DELETE');
+        }
+
+        /**
+         * @param string $reqString
+         * @param array  $paramArray
+         * @param string $apiUser
+         * @return \stdClass
+         */
+        private function _putRequest(string $reqString, array $paramArray, string $apiUser = 'system'): \stdClass
+        {
+            return $this->_putpostRequest($reqString, $paramArray, $apiUser, 'PUT');
+        }
+
+        /**
+         * @param string $reqString
+         * @param array  $paramArray
+         * @param string $apiUser
+         * @return \stdClass
+         */
+        private function _postRequest(string $reqString, array $paramArray, string $apiUser = 'system'): \stdClass
+        {
+            /** @noinspection ArgumentEqualsDefaultValueInspection * */
+            return $this->_putpostRequest($reqString, $paramArray, $apiUser, 'POST');
+        }
+
+        /**
+         * DiscourseAPI constructor.
+         *
+         * @param        $dcHostname
+         * @param null   $apiKey
+         * @param string $protocol
+         */
+        public function __construct($dcHostname, $apiKey = null, $protocol = 'http')
+        {
+            $this->_dcHostname = $dcHostname;
+            $this->_apiKey     = $apiKey;
+            $this->_protocol   = $protocol;
         }
 
     }
