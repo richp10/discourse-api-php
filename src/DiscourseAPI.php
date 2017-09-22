@@ -628,7 +628,7 @@
          */
         private function _deleteRequest(string $reqString, array $paramArray, string $apiUser = 'system'): \stdClass
         {
-            return $this->_getRequest($reqString, $paramArray, $apiUser, 'DELETE');
+            return $this->_putpostRequest($reqString, $paramArray, $apiUser, 'DELETE');
         }
 
         /**
