@@ -174,7 +174,7 @@
                 return false;
             }
 
-            return $this->_deleteRequest('/admin/groups/', [$groupId]);
+            return $this->_deleteRequest('/admin/groups/'.(string)$groupId);
         }
 
         ///////////////   Categories
@@ -597,9 +597,9 @@
             if (isset($paramArray['group']) && is_array($paramArray['group'])) {
                 $query = http_build_query($paramArray);
             } else {
-                foreach ($paramArray[0] as $param => $value) {
-                    $query .= $param . '=' . urlencode($value) . '&';
-                }
+                    foreach ($paramArray[0] as $param => $value) {
+                        $query .= $param . '=' . urlencode($value) . '&';
+                    }
             }
             $query = trim($query, '&');
             curl_setopt($ch, CURLOPT_POSTFIELDS, $query);
