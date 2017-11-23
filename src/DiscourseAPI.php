@@ -174,7 +174,7 @@
                 return false;
             }
 
-            return $this->_deleteRequest('/admin/groups/'.(string)$groupId, []);
+            return $this->_deleteRequest('/admin/groups/' . (string)$groupId, []);
         }
 
         ///////////////   Categories
@@ -297,6 +297,24 @@
         }
 
         //////////////   USERS
+
+        /**
+         * createUser
+         *
+         * @param string $userName     username of new user
+         *
+         * @return mixed HTTP return code and API return object
+         */
+        public function logoutUser(string $userName)
+        {
+            $userid  = $this->getUserByUsername($userName)->apiresult->user->id;
+            if (!\is_int($userid)) {
+                return false;
+            }
+
+            return $this->_postRequest('/admin/users/'.$userid.'/log_out', []);
+        }
+
 
         /** @noinspection MoreThanThreeArgumentsInspection */
         /**
