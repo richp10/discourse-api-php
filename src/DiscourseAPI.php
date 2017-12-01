@@ -426,6 +426,18 @@
             return false;
         }
 
+        /**
+         * getUserBadgesByUsername
+         *
+         * @param string $userName username of user
+         *
+         * @return mixed HTTP return code and list of badges for given user
+         */
+        public function getUserBadgesByUsername($userName)
+        {
+            return $this->_postRequest("/user-badges/{$userName}.json");
+        }
+
         ///////////////  POSTS
 
         /**
