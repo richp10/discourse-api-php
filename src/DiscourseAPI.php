@@ -435,7 +435,7 @@
          */
         public function getUserBadgesByUsername($userName)
         {
-            return $this->_postRequest("/user-badges/{$userName}.json");
+            return $this->_getRequest("/user-badges/{$userName}.json");
         }
 
         ///////////////  POSTS
