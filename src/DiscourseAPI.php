@@ -390,6 +390,18 @@
         }
 
         /**
+         * getUserByExternalID
+         *
+         * @param string $externalID     external id of sso user
+         *
+         * @return mixed HTTP return code and API return object
+         */
+        function getUserByExternalID($externalID)
+        {
+            return $this->_getRequest("/users/by-external/{$externalID}.json");
+        }
+
+        /**
          * @param        $email
          * @param        $topicId
          * @param string $userName
