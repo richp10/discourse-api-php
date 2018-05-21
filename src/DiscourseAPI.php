@@ -33,7 +33,19 @@
          */
         public function getGroups()
         {
-            return $this->_getRequest('/admin/groups.json');
+            return $this->_getRequest('/groups.json');
+        }
+        
+        /**
+         * getGroup
+         *
+         * @param string $group name of group
+         * @return mixed HTTP return code and API return object
+         */
+
+        public function getGroup($group)
+        {
+            return $this->_getRequest('/groups/' . $group . '.json');
         }
 
         /**
