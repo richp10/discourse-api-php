@@ -202,7 +202,7 @@
          *
          * @return mixed HTTP return code and API return object
          **/
-        public function createCategory(string $categoryName, string $color, string $textColor = '000000', string $userName = 'system')
+        public function createCategory(string $categoryName, string $color, string $textColor, string $userName)
         {
             $params = [
                 'name'       => $categoryName,
