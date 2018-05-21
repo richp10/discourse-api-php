@@ -43,9 +43,9 @@
          * @return mixed HTTP return code and API return object
          */
 
-        public function getGroup($group)
+        public function getGroup($groupname)
         {
-            return $this->_getRequest('/groups/' . $group . '.json');
+            return $this->_getRequest('/groups/' . $groupname . '.json');
         }
 
         /**
@@ -79,20 +79,12 @@
          */
         public function getGroupIdByGroupName($groupname)
         {
-            $obj = $this->getGroups();
+            $obj = $this->getGroup($groupname);
             if ($obj->http_code !== 200) {
                 return false;
             }
 
-            foreach ($obj->apiresult as $group) {
-                if ($group->name === $groupname) {
-                    $groupId = (int)$group->id;
-                    break;
-                }
-                $groupId = false;
-            }
-
-            return $groupId;
+            return $obj->apiresult->group->id;
         }
 
         /**
