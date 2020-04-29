@@ -602,12 +602,14 @@
          **/
         private function _getRequest(string $reqString, array $paramArray = [], string $apiUser = 'system', $HTTPMETHOD = 'GET'): \stdClass
         {
-            $paramArray['api_key']      = $this->_apiKey;
-            $paramArray['api_username'] = $apiUser;
             $paramArray['show_emails']  = 'true';
             $ch                         = curl_init();
             $url                        = sprintf('%s://%s%s?%s', $this->_protocol, $this->_dcHostname, $reqString, http_build_query($paramArray));
             curl_setopt($ch, CURLOPT_URL, $url);
+            curl_setopt($ch, CURLOPT_HTTPHEADER, array(
+                "Api-Key: " . $this->_apiKey,
+                "Api-Username: " . $apiUser
+            ));
             curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $HTTPMETHOD);
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
             curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
@@ -637,7 +639,7 @@
         private function _putpostRequest(string $reqString, array $paramArray, string $apiUser = 'system', $HTTPMETHOD = 'POST'): \stdClass
         {
             $ch  = curl_init();
-            $url = sprintf('%s://%s%s?api_key=%s&api_username=%s', $this->_protocol, $this->_dcHostname, $reqString, $this->_apiKey, $apiUser);
+            $url = sprintf('%s://%s%s', $this->_protocol, $this->_dcHostname, $reqString);
             curl_setopt($ch, CURLOPT_URL, $url);
             $query = '';
             if (isset($paramArray['group']) && is_array($paramArray['group'])) {
@@ -650,6 +652,10 @@
                 }
             }
             $query = trim($query, '&');
+            curl_setopt($ch, CURLOPT_HTTPHEADER, array(
+                "Api-Key: " . $this->_apiKey,
+                "Api-Username: " . $apiUser
+            ));
             curl_setopt($ch, CURLOPT_POSTFIELDS, $query);
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
             curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $HTTPMETHOD);
